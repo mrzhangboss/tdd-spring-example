@@ -20,7 +20,7 @@
 - :bug: ：修补bug
 - :books: ：文档（documentation）
 - :star: ： 格式（不影响代码运行的变动）
-- :hammer: refactor：重构（即不是新增功能，也不是修改bug的代码变动） 
+- :hammer:：重构（即不是新增功能，也不是修改bug的代码变动） 
 - :tea: ：增加测试
 - :dart:：构建过程或辅助工具的变动
 
