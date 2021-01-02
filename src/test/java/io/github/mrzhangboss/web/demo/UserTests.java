@@ -15,11 +15,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import static org.assertj.core.internal.bytebuddy.matcher.ElementMatchers.is;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.hamcrest.Matchers.equalTo;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.junit.jupiter.api.Test;
 
@@ -51,7 +51,8 @@ class UserTests {
     String obj2json(Object obj) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
-        ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
+//        ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
+        ObjectWriter ow = mapper.writer();
         String json = null;
         try {
             json = ow.writeValueAsString(obj);
@@ -84,8 +85,9 @@ class UserTests {
             String password = map.get(username);
             String user = getUser(username, password);
             String errorUser = getUser(username, password + Math.random());
-            testUser(user,  content().string(equalTo(obj2json(ResBean.LoginSuccess()))));
-            testUser(errorUser, content().string(equalTo(obj2json(ResBean.LoginError()))));
+            testUser(errorUser, jsonPath("$.code", is(200)).exists());
+            testUser(user, content().string(equalTo(obj2json(ResBean.LoginSuccess()))));
+            testUser(errorUser, jsonPath("$.code", is(500)).exists());
 
         }
 
