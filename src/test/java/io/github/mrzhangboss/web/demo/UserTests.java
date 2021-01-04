@@ -58,6 +58,10 @@ class UserTests {
         Assert.notNull(session, "session 不能为空");
         user.setCaptcha("ErrorCaptcha");
         testLogin(user, jsonPath("$.code", is(500)).exists(), session);
+        Assert.isNull(session.getAttribute("captcha"), "验证码必须失效");
+        session = (MockHttpSession)mvc.perform(MockMvcRequestBuilders.get("/api/captcha")).andExpect(status().isOk()).andReturn()
+                .getRequest()
+                .getSession();
         user.setCaptcha((String)session.getAttribute("captcha"));
         testLogin(user, content, session);
 
