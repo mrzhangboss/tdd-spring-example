@@ -22,6 +22,7 @@ public class UserController {
     @RequestMapping(value = "/session", method = RequestMethod.POST)
     public ResBean<String> login(HttpServletRequest request, @RequestBody UserBean user) {
         if (!CaptchaUtil.ver(user.getCaptcha(), request)) {
+            CaptchaUtil.clear(request);
             return ResBean.LoginCaptchaError();
         }
         Map<String, String> passwords = userConfig.getPasswords();
