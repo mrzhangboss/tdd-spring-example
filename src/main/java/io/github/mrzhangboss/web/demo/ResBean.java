@@ -37,6 +37,13 @@ public class ResBean<T> {
         return res;
     }
 
+    public static ResBean<String> LoginCaptchaError() {
+        ResBean<String> res = new ResBean<>();
+        res.setCode(500);
+        res.setMsg("验证码错误");
+        return res;
+    }
+
     public static ResBean<String> LoginSuccess() {
         ResBean<String> res = new ResBean<>();
         res.setCode(200);
