@@ -44,17 +44,23 @@ class UserTests {
     @Autowired
     private UserConfigProperties config;
 
+    void testLogin(UserBean user, ResultMatcher expect, MockHttpSession session) throws Exception {
+        mvc.perform(MockMvcRequestBuilders.post("/api/session").session(session).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(obj2json(user)))
+                .andExpect(status().isOk())
+                .andExpect(expect);
+    }
+
     void testUser(UserBean user, ResultMatcher content) throws Exception {
 
-        HttpSession session = mvc.perform(MockMvcRequestBuilders.get("/api/captcha")).andExpect(status().isOk()).andReturn()
+        MockHttpSession session = (MockHttpSession)mvc.perform(MockMvcRequestBuilders.get("/api/captcha")).andExpect(status().isOk()).andReturn()
                 .getRequest()
                 .getSession();
         Assert.notNull(session, "session 不能为空");
+        user.setCaptcha("ErrorCaptcha");
+        testLogin(user, jsonPath("$.code", is(500)).exists(), session);
         user.setCaptcha((String)session.getAttribute("captcha"));
+        testLogin(user, content, session);
 
-        mvc.perform(MockMvcRequestBuilders.post("/api/session").session((MockHttpSession)session).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(obj2json(user)))
-                .andExpect(status().isOk())
-                .andExpect(content);
 
     }
 
