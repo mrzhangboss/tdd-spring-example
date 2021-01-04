@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
@@ -29,7 +30,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.util.Assert;
 
+import javax.servlet.http.HttpSession;
 import java.util.Map;
 
 @SpringBootTest
@@ -41,8 +44,15 @@ class UserTests {
     @Autowired
     private UserConfigProperties config;
 
-    void testUser(String user, ResultMatcher content) throws Exception {
-        mvc.perform(MockMvcRequestBuilders.post("/api/session").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(user))
+    void testUser(UserBean user, ResultMatcher content) throws Exception {
+
+        HttpSession session = mvc.perform(MockMvcRequestBuilders.get("/api/captcha")).andExpect(status().isOk()).andReturn()
+                .getRequest()
+                .getSession();
+        Assert.notNull(session, "session 不能为空");
+        user.setCaptcha((String)session.getAttribute("captcha"));
+
+        mvc.perform(MockMvcRequestBuilders.post("/api/session").session((MockHttpSession)session).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(obj2json(user)))
                 .andExpect(status().isOk())
                 .andExpect(content);
 
@@ -51,7 +61,6 @@ class UserTests {
     String obj2json(Object obj) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
-//        ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
         ObjectWriter ow = mapper.writer();
         String json = null;
         try {
@@ -64,11 +73,11 @@ class UserTests {
     }
 
 
-    String getUser(String username, String password) throws Exception {
+    UserBean getUser(String username, String password) throws Exception {
         UserBean user = new UserBean();
         user.setUser(username);
         user.setPassword(password);
-        return obj2json(user);
+        return user;
     }
 
     String getInfo(int code) {
@@ -83,8 +92,8 @@ class UserTests {
         Map<String, String> map = config.getPasswords();
         for (String username: map.keySet()) {
             String password = map.get(username);
-            String user = getUser(username, password);
-            String errorUser = getUser(username, password + Math.random());
+            UserBean user = getUser(username, password);
+            UserBean errorUser = getUser(username, password + Math.random());
             testUser(errorUser, jsonPath("$.code", is(200)).exists());
             testUser(user, content().string(equalTo(obj2json(ResBean.LoginSuccess()))));
             testUser(errorUser, jsonPath("$.code", is(500)).exists());
